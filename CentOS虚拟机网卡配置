@@ -1,0 +1,27 @@
+CentOS7虚拟机初始化
+#!/bin/bash
+rm -rf /etc/yum.repos.d/*
+curl -o /etc/yum.repos.d/CentOS7-163.repo http://mirrors.163.com/.help/CentOS7-Base-163.repo
+yum clean all
+
+yum -y install vim lrzsz
+#修改CentOS7网卡ens33为eth0
+sed -i 's/ens33/eth0/g' /etc/sysconfig/network-scripts/ifcfg-ens33
+mv ifcfg-ens33 ifcfg-eth0
+#vim /etc/default/grub在GRUB_CMDLINE_LINUX中添加 "net.ifnames=0 biosdevname=0"
+
+sed -i '/GRUB_CMDLINE_LINUX/c GRUB_CMDLINE_LINUX="crashkernel=auto rd.lvm.lv=centos/root rd.lvm.lv=centos/swap rhgb quiet "net.ifnames=0 biosdevname=0""
+'  /etc/default/grub
+
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+
+#1.输入vim /etc/sysconfig/network-scripts/ifcfg-ens33，
+#编辑ens33网卡配置文件（修改前最好先备份），
+#将NAME=ens33、DEVICE=ens33改为NAME=eth0、DEVICE=eth0，保存。
+
+#2.重命名文件，输入mv ifcfg-ens33 ifcfg-eth0
+
+
+#3.禁用该可预测命名规则。输入vim /etc/default/grub编辑文件（编辑文件前最好备份），
+#GRUB_CMDLINE_LINUX里添加“net.ifnames=0 biosdevname=0 ”参数

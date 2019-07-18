@@ -1,0 +1,67 @@
+1.修改主机名
+hostname node1
+sed -i '/HOSTNAM/ c HOSTNAM=node1' /etc/sysconfig/network
+
+2.配置yum源
+rm -rf /etc/yum.repos.d/*
+curl -o /etc/yum.repos.d/CentOS-6.aliyun.repo http://mirrors.aliyun.com/repo/Centos-6.repo
+
+yum -y install ntp
+ntpdate ntp1.aliyun.com
+
+#!/bin/bash
+sed -i 's/^server/#server/g' /etc/ntp.conf
+sed -i '/3.centos.pool/a server  ntp1.aliyun.com iburst' /etc/ntp.conf
+service ntpd restart
+chkconfig ntpd on
+
+3.确认
+ntpstat
+ntpq -p 
+
+
+chkconfig ntpd on
+sed -i 's#SELINUX=enforcing#SELINUX=disabled#' /etc/selinux/config
+
+
+
+
+
+4.修改配置
+cat /etc/ntp.conf
+driftfile /var/lib/ntp/drift
+restrict default kod nomodify notrap nopeer noquery     #<==对默认的client拒绝所有操作
+restrict -6 default kod nomodify notrap nopeer noquery
+restrict 127.0.0.1                                      #<==允许本机的一切操作
+restrict 192.168.1.0 mask 255.255.255.0 nomodify    #<==允许局域网内所有client连接到这台服务器
+restrict -6 ::1                                         同步时间.但是拒绝让他们修改服务器上的时间
+#server 0.centos.pool.ntp.org iburst
+#server 1.centos.pool.ntp.org iburst
+#server 2.centos.pool.ntp.org iburst
+#server 3.centos.pool.ntp.org iburst
+server ntp1.aliyun.com			#<==同步公网的时间
+server 127.127.1.0              #<==如果无法连接公网，则使用自己本身的时间作为标准时间。
+fudge 127.127.1.0 stratum 10    #<==设置stratum级别
+includefile /etc/ntp/crypto/pw
+keys /etc/ntp/keys
+
+
+
+查看ntp服务器与上层ntp的状态
+命令  ntpq -p
+remote：本机和上层ntp的ip或主机名，“+”表示优先，“*”表示次优先
+refid：参考上一层ntp主机地址
+st：stratum阶层
+when：多少秒前曾经同步过时间
+poll：下次更新在多少秒后
+reach：已经向上层ntp服务器要求更新的次数
+delay：网络延迟
+offset：时间补偿
+jitter：系统时间与bios时间差
+
+设置开机启动
+chkconfig ntpd on
+sed -i 's#SELINUX=enforcing#SELINUX=disabled#' /etc/selinux/config
+ 
+ 
+ 
